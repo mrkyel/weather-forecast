@@ -11,7 +11,7 @@
 
 ## 기술 스택
 
-- React
+- React-Native (Expo)
 - TypeScript
 - Zustand
 - NativeWind
