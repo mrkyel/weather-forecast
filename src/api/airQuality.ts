@@ -12,8 +12,8 @@ export const fetchNearbyAirQuality = async (
   try {
     const { data } = await api.get<AirQualityData>("/air-quality", {
       params: {
-        lat: latitude,
-        lng: longitude,
+        latitude,
+        longitude,
       },
     });
 

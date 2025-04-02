@@ -11,13 +11,14 @@ import {
   RefreshControl,
   ScrollView,
   Alert,
-  NetInfo,
 } from "react-native";
 import * as Location from "expo-location";
-import Constants from "expo-constants";
+import { api } from "./src/api/axios";
 
-const API_URL =
-  Constants.expoConfig?.extra?.expoPublicApiUrl || "http://10.50.2.153:3000";
+// API URL 설정
+const API_URL = "https://kale-weather-forecast-backend.vercel.app";
+
+console.log("App.tsx API_URL:", API_URL);
 
 interface AirQualityData {
   pm10Value: number;
@@ -46,41 +47,24 @@ export default function App() {
       setError(null);
       setLoading(true);
 
-      // 네트워크 연결 확인
-      const netInfo = await NetInfo.fetch();
-      if (!netInfo.isConnected) {
-        throw new Error("인터넷 연결을 확인해주세요.");
-      }
-
-      // API URL 확인
-      if (!API_URL) {
-        throw new Error("서버 설정이 올바르지 않습니다.");
-      }
-
-      // 위치 권한 요청
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         throw new Error("위치 권한이 필요합니다.");
       }
 
-      // 현재 위치 가져오기
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
-      // 서버에서 데이터 가져오기
-      const response = await fetch(
-        `${API_URL}/air-quality?latitude=${latitude}&longitude=${longitude}`
-      );
+      const response = await api.get("/air-quality", {
+        params: { latitude, longitude },
+      });
 
-      if (!response.ok) {
-        throw new Error("서버에서 데이터를 가져올 수 없습니다.");
-      }
-
-      const data = await response.json();
-      setAirQuality(data);
+      setAirQuality(response.data);
     } catch (err) {
-      setError(err.message);
-      Alert.alert("오류", err.message);
+      const errorMessage =
+        err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+      setError(errorMessage);
+      Alert.alert("오류", errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -194,21 +178,33 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === "ios" ? 50 : 70,
+    paddingTop: 70,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
   card: {
     margin: 20,
     padding: 20,
     borderRadius: 20,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...(Platform.OS === "web"
+      ? {
+          boxShadow: "0px 2px 3.84px rgba(0, 0, 0, 0.25)",
+        }
+      : {
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+          elevation: 5,
+        }),
   },
   header: {
     alignItems: "center",
@@ -300,6 +296,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#999",
   },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
   errorText: {
     fontSize: 16,
     color: "#ff4444",
@@ -310,16 +311,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#0000ff",
     textDecorationLine: "underline",
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#666",
   },
 });

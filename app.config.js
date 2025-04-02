@@ -40,7 +40,9 @@ export default {
       eas: {
         projectId: "your-project-id",
       },
-      expoPublicApiUrl: process.env.EXPO_PUBLIC_API_URL,
+      expoPublicApiUrl:
+        process.env.EXPO_PUBLIC_API_URL ||
+        "https://kale-weather-forecast-backend.vercel.app",
     },
   },
 };
